@@ -10,6 +10,7 @@ export interface Options {
   camel2UnderlineComponentName?: boolean
   transformToDefaultImport?: boolean
   resolveContext?: string[]
+  literalDirectory?: ((name: string) => string) | string
 }
 
 export interface ImportedStruct {
@@ -83,7 +84,7 @@ function getImportedStructs(node: ts.Node) {
 function createDistAst(struct: ImportedStruct, options: Options) {
   const astNodes: ts.Node[] = []
 
-  const { libraryName, libraryOverride } = options
+  const { libraryName, libraryOverride, literalDirectory } = options
   const _importName = struct.importName
   const importName = options.camel2UnderlineComponentName
     ? camel2Underline(_importName)
@@ -143,7 +144,13 @@ function createDistAst(struct: ImportedStruct, options: Options) {
           ? undefined
           : ts.createNamedImports([ts.createImportSpecifier(undefined, ts.createIdentifier(struct.importName))]),
       ),
-      ts.createLiteral(importPath),
+      ts.createLiteral(
+        typeof literalDirectory === 'function'
+          ? literalDirectory(importPath)
+          : typeof literalDirectory === 'string'
+          ? literalDirectory
+          : importPath,
+      ),
     )
 
     astNodes.push(scriptNode)
